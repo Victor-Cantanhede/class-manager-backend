@@ -1,39 +1,68 @@
-import { Request, Response } from 'express';
+import { Request, Response, RequestHandler, NextFunction } from 'express';
 import User from '../models/User';
 import generateRegistration from '../functions/generateRegistration';
-import userNameRules from '../services/rules/userNameRules';
 import passwordRules from '../services/rules/passowordRules';
+import bcrypt from 'bcrypt';
 
 
-// 🟢 Criar Usuário após verificação de e-mail
-export const createUser = async (req: Request, res: Response) => {
+// Função de autenticação de usuário com tipagem explícita
+export const authenticateUser: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userName, password } = req.body;
+
+    // 📌 Valida se ambos os campos foram fornecidos
+    if (!userName || !password) {
+      res.status(400).json({ message: 'Username e password são obrigatórios!' });
+      return;
+    }
+
+    // 📌 Verifica se o usuário existe
+    const user = await User.findOne({ userName });
+
+    if (!user) {
+      res.status(401).json({ message: 'Usuário não encontrado!' });
+      return;
+    }
+
+    // 📌 Verifica se a senha está correta
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      res.status(401).json({ message: 'Senha incorreta!' });
+      return;
+    }
+
+    // Se tudo estiver certo, retorna uma resposta positiva
+    res.status(200).json({ message: 'Autenticação bem-sucedida!', user });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 🟢 Criar Usuário
+export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, tel, userName, password } = req.body;
 
     // 📌 Validação básica
     if (!name || !email || !tel || !userName || !password) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios!' });
-    }
-
-    // 📌 Validando regras do nome de usuário
-    const validateUserNameRules = userNameRules(userName);
-
-    if (validateUserNameRules === false) {
-      return res.status(500).json({ message: 'Erro ao criar usuário', erro: 'O nome de usuário deve conter de 10 a 20 caractere' });
+      res.status(400).json({ message: 'Todos os campos são obrigatórios!' });
+      return;
     }
 
     // 📌 Validação de senha forte
     const validatePasswordRules = passwordRules(password);
-
     if (validatePasswordRules !== true) {
-      return res.status(500).json({ message: 'Erro ao criar usuário', erro: validatePasswordRules });
+      res.status(500).json({ message: 'Erro ao criar usuário', erro: validatePasswordRules });
+      return;
     }
 
     // 📌 Matrícula e perfil automáticos
     const { registration } = await generateRegistration();
     const userProfile = 'teacher';
 
-    // 📌 Criação do usuário
+    // 📌 Criação do usuário com senha hashada
     const newUser = new User({
       registration,
       name,
@@ -41,7 +70,7 @@ export const createUser = async (req: Request, res: Response) => {
       tel,
       userProfile,
       userName,
-      password,
+      password
     });
 
     await newUser.save(); // Salva no banco
@@ -52,9 +81,8 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-
 // 🔵 Listar todos os Usuários
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await User.find();
     res.status(200).json(users);
@@ -64,14 +92,14 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
-
 // 🟡 Buscar Usuário por ID
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.params.id);
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      res.status(404).json({ message: 'Usuário não encontrado' });
+      return;
     }
 
     res.status(200).json(user);
@@ -81,9 +109,8 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-
 // 🟠 Atualizar Usuário
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     // Remove os campos que não podem ser alterados
     const { registration, email, userProfile, userName, ...updateData } = req.body;
@@ -95,25 +122,25 @@ export const updateUser = async (req: Request, res: Response) => {
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      res.status(404).json({ message: 'Usuário não encontrado' });
+      return;
     }
 
     res.status(200).json({ message: 'Usuário atualizado!', user: updatedUser });
 
   } catch (error) {
-
     res.status(500).json({ message: 'Erro ao atualizar usuário', error: (error as Error).message });
   }
 };
 
-
 // 🔴 Deletar Usuário
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
 
     if (!deletedUser) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      res.status(404).json({ message: 'Usuário não encontrado' });
+      return;
     }
 
     res.status(200).json({ message: 'Usuário deletado!' });

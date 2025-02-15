@@ -1,10 +1,11 @@
-import { Router, Request, Response, RequestHandler } from 'express';
-import { createUser, getAllUsers, getUserById, updateUser, deleteUser } from '../controllers/userController';
+import { Router, Request, Response, RequestHandler, NextFunction } from 'express';
+import { createUser, getAllUsers, getUserById, updateUser, deleteUser, authenticateUser } from '../controllers/userController';
 
 
 const router = Router();
 
-// Definindo o tipo RequestHandler
+
+// Rota para criar usuário
 const postHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     await createUser(req, res); // Apenas aguarda a execução da função do controller
@@ -16,6 +17,7 @@ const postHandler: RequestHandler = async (req: Request, res: Response): Promise
   }
 };
 
+// Rota para buscar usuários
 const getHandlerAll: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     await getAllUsers(req, res);
@@ -27,6 +29,7 @@ const getHandlerAll: RequestHandler = async (req: Request, res: Response): Promi
   }
 };
 
+// Rota para buscar um usuário
 const getHandlerById: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     await getUserById(req, res);
@@ -38,6 +41,7 @@ const getHandlerById: RequestHandler = async (req: Request, res: Response): Prom
   }
 };
 
+// Rota para atualizar usuário
 const putHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     await updateUser(req, res);
@@ -49,6 +53,7 @@ const putHandler: RequestHandler = async (req: Request, res: Response): Promise<
   }
 };
 
+// Rota para deletar usuário
 const deleteHandler: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   try {
     await deleteUser(req, res);
@@ -60,12 +65,26 @@ const deleteHandler: RequestHandler = async (req: Request, res: Response): Promi
   }
 };
 
+// Rota de autenticação de login
+const postLoginHandler: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await authenticateUser(req, res, next);
+
+  } catch (error) {
+    console.error('Erro ao autenticar usuário', error);
+    res.status(500).json({ message: 'Erro ao autenticar usuário' });
+  }
+};
+
 // Agora associamos as rotas às funções
 router.post('/', postHandler);
 router.get('/', getHandlerAll);
 router.get('/:id', getHandlerById);
 router.put('/:id', putHandler);
 router.delete('/:id', deleteHandler);
+
+// Rota de login
+router.post('/login', postLoginHandler);
 
 
 export default router;
