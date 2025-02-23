@@ -2,6 +2,7 @@ import { Request, Response, RequestHandler, NextFunction } from 'express';
 import User from '../models/User';
 import generateRegistration from '../functions/generateRegistration';
 import passwordRules from '../services/rules/passowordRules';
+import userNameRules from '../services/rules/userNameRules';
 import bcrypt from 'bcrypt';
 
 
@@ -51,10 +52,17 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // 📌 Validação de nome de usuário
+    const validateUserNameRules = userNameRules(userName);
+    if (validateUserNameRules !== true) {
+      res.status(500).json({ message: 'Nome de usuário não atende aos critérios de cadastro', erro: validateUserNameRules });
+      return;
+    }
+
     // 📌 Validação de senha forte
     const validatePasswordRules = passwordRules(password);
     if (validatePasswordRules !== true) {
-      res.status(500).json({ message: 'Erro ao criar usuário', erro: validatePasswordRules });
+      res.status(500).json({ message: 'Senha não atende aos critérios de cadastro', erro: validatePasswordRules });
       return;
     }
 
