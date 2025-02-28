@@ -52,8 +52,33 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // 📌 Verifica se já existe um usuário com o mesmo nome de usuário
+    const existingUser = await User.findOne({ userName });
+
+    if (existingUser) {
+      res.status(400).json({ message: 'Nome de usuário já cadastrado, altere seu nome de usuário e tente novamente!' });
+      return;
+    }
+
+    // 📌 Verifica se já existe um usuário com o mesmo email
+    const existingEmail = await User.findOne({ email });
+
+    if (existingEmail) {
+      res.status(400).json({ message: `O e-mail "${email}" já foi cadastrado por outro usuário! Volte para a tela de login e recupere seu usuário e senha.` });
+      return;
+    }
+
+    // 📌 Verifica se já existe um usuário com o mesmo telefone
+    const existingTel = await User.findOne({ tel });
+
+    if (existingTel) {
+      res.status(400).json({ message: `O número de telefone "${tel}" já foi cadastrado por outro usuário! Verifique seu telefone ou cadastre outro número.` });
+      return;
+    }
+
     // 📌 Validação de nome de usuário
     const validateUserNameRules = userNameRules(userName);
+
     if (validateUserNameRules !== true) {
       res.status(500).json({ message: 'Nome de usuário não atende aos critérios de cadastro', erro: validateUserNameRules });
       return;
@@ -61,6 +86,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
     // 📌 Validação de senha forte
     const validatePasswordRules = passwordRules(password);
+
     if (validatePasswordRules !== true) {
       res.status(500).json({ message: 'Senha não atende aos critérios de cadastro', erro: validatePasswordRules });
       return;
@@ -85,7 +111,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     res.status(201).json({ message: 'Usuário criado com sucesso!', user: newUser });
 
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao criar usuário', error: (error as Error).message });
+    res.status(500).json({ message: `Erro ao criar usuário: ${(error as Error).message}`, error: (error as Error).message });
   }
 };
 

@@ -31,7 +31,8 @@ const UserSchema: Schema = new Schema(
     },
     tel: {
       type: Number,
-      required: true
+      required: true,
+      unique: true
     },
     userProfile: {
       type: String,
