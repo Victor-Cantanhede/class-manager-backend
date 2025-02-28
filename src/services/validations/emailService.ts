@@ -1,30 +1,28 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
 
-// Constante com as credenciais do serviço de e-mail
+dotenv.config(); // Para carregar variáveis de ambiente
+
 const transporter = nodemailer.createTransport({
-  service: 'Gmail', // Domínio de e-mail do Class Manager
+  service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // E-mail do Class Manager
-    pass: process.env.EMAIL_PASS, // Senha do Class Manager
-  },
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
-// Função que envia o e-mail com o código
-export const sendVerificationEmail = async (email: string, code: string) => {
-  try {
-    // Envia o e-mail com o código de verificação
-    await transporter.sendMail({
-      from: '"Login Class Manager" <loginclassmanager@gmail.com>', // Quem está enviando
-      to: email, // Para quem vai o e-mail
-      subject: 'Seu Código de Verificação', // Assunto
-      text: `Seu código de verificação é: ${code}`, // O código no corpo do e-mail
-    });
+// Função para enviar código de verificação
+export const sendVerificationEmail = async (email: string, code: string): Promise<void> => {
+  
+  // Configurando mensagem enviada ao e-mail do usuário
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'CÓDIGO DE VALIDAÇÃO - CLASS MANAGER',
+    text: `Seu código de validação é ${code}, digite este código no campo solicitado pelo Class Manager!`
+  };
 
-    console.log(`Código de verificação enviado para: ${email}`);
-    
-  } catch (error) {
-    console.error('Erro ao enviar e-mail:', error);
-    throw new Error('Erro ao enviar e-mail');
-  }
-};
+  // Enviando mensagem
+  await transporter.sendMail(mailOptions);
+}

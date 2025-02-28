@@ -1,4 +1,5 @@
 import { Request, Response, RequestHandler, NextFunction } from 'express';
+import { sendVerificationEmail } from '../services/validations/emailService';
 import User from '../models/User';
 import generateRegistration from '../functions/generateRegistration';
 import passwordRules from '../services/rules/passowordRules';
@@ -6,7 +7,7 @@ import userNameRules from '../services/rules/userNameRules';
 import bcrypt from 'bcrypt';
 
 
-// Função de autenticação de usuário com tipagem explícita
+// Função de autenticação de usuário
 export const authenticateUser: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userName, password } = req.body;
@@ -40,6 +41,60 @@ export const authenticateUser: RequestHandler = async (req: Request, res: Respon
     next(error);
   }
 };
+
+// 🔹 Rota para solicitar envio do código de verificação
+export const requestEmailVerification = async (req: Request, res: Response): Promise<void> => {
+
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: 'E-mail é obrigatório!' });
+      return;
+    }
+
+    // Gerar um código de 6 dígitos
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Salvar o código temporariamente no banco (associado ao e-mail)
+    await User.updateOne({ email }, { emailVerificationCode: verificationCode }, { upsert: true });
+
+    // Enviar o código por e-mail
+    await sendVerificationEmail(email, verificationCode);
+
+    res.status(200).json({ message: 'Código enviado para o e-mail!' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao enviar código', error: (error as Error).message });
+  }
+}
+
+// 🔹 Rota para verificar o código antes do cadastro
+export const verifyEmailCode = async (req: Request, res: Response): Promise<void> => {
+
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      res.status(400).json({ message: 'E-mail e código são obrigatórios!' });
+      return;
+    }
+
+    // Buscar o usuário e verificar o código
+    const user = await User.findOne({ email });
+
+    if (!user || user.emailVerificationCode !== code) {
+      res.status(400).json({ message: 'Código inválido ou expirado!' });
+      return;
+    }
+
+    // Código validado, permitir o cadastro
+    res.status(200).json({ message: 'Código validado com sucesso!' });
+    
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao validar código', error: (error as Error).message });
+  }
+}
 
 // 🟢 Criar Usuário
 export const createUser = async (req: Request, res: Response): Promise<void> => {

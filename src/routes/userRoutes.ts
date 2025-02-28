@@ -1,5 +1,5 @@
 import { Router, Request, Response, RequestHandler, NextFunction } from 'express';
-import { createUser, getAllUsers, getUserById, updateUser, deleteUser, authenticateUser } from '../controllers/userController';
+import { createUser, getAllUsers, getUserById, updateUser, deleteUser, authenticateUser, requestEmailVerification, verifyEmailCode } from '../controllers/userController';
 
 
 const router = Router();
@@ -76,7 +76,7 @@ const postLoginHandler: RequestHandler = async (req: Request, res: Response, nex
   }
 };
 
-// Agora associamos as rotas às funções
+// Rotas para funções CRUD
 router.post('/', postHandler);
 router.get('/', getHandlerAll);
 router.get('/:id', getHandlerById);
@@ -85,6 +85,10 @@ router.delete('/:id', deleteHandler);
 
 // Rota de login
 router.post('/login', postLoginHandler);
+
+// Rota de verificação de email
+router.post('/request-email-verification', requestEmailVerification); // Envia código
+router.post('/verify-email-code', verifyEmailCode); // Solicita código
 
 
 export default router;

@@ -11,6 +11,7 @@ export interface IUser extends Document {
   userProfile: string;
   userName: string;
   password: string;
+  emailVerificationCode?: string; // Serve para receber o código de verificação de email
 }
 
 // Esquema do usuário
@@ -47,6 +48,9 @@ const UserSchema: Schema = new Schema(
       type: String,
       required: true
     },
+    emailVerificationCode: {
+      type: String
+    }
   },
   { timestamps: true }
 );
