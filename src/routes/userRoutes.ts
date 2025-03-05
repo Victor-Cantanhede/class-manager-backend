@@ -88,7 +88,7 @@ router.post('/login', postLoginHandler);
 
 // Rota de verificação de email
 router.post('/request-email-verification', requestEmailVerification); // Envia código
-router.post('/verify-email-code', verifyEmailCode); // Solicita código
+router.post('/verify-email-code', verifyEmailCode); // Verifica código
 
 
 export default router;

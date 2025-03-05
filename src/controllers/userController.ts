@@ -1,5 +1,6 @@
 import { Request, Response, RequestHandler, NextFunction } from 'express';
 import { sendVerificationEmail } from '../services/validations/emailService';
+import { TokenVerification } from '../models/Token';
 import User from '../models/User';
 import generateRegistration from '../functions/generateRegistration';
 import passwordRules from '../services/rules/passowordRules';
@@ -54,13 +55,17 @@ export const requestEmailVerification = async (req: Request, res: Response): Pro
     }
 
     // Gerar um código de 6 dígitos
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const newToken = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Salvar o código temporariamente no banco (associado ao e-mail)
-    await User.updateOne({ email }, { emailVerificationCode: verificationCode }, { upsert: true });
+    await TokenVerification.findOneAndUpdate(
+      { email },
+      { code: newToken, createdAt: new Date() },
+      { upsert: true, new: true } // Se o e-mail não existir, cria um novo registro
+    );
 
     // Enviar o código por e-mail
-    await sendVerificationEmail(email, verificationCode);
+    await sendVerificationEmail(email, newToken);
 
     res.status(200).json({ message: 'Código enviado para o e-mail!' });
 
@@ -80,10 +85,10 @@ export const verifyEmailCode = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Buscar o usuário e verificar o código
-    const user = await User.findOne({ email });
+    // Buscar o token e verificar se o código está correto
+    const verification = await TokenVerification.findOne({ email, code });
 
-    if (!user || user.emailVerificationCode !== code) {
+    if (!verification) {
       res.status(400).json({ message: 'Código inválido ou expirado!' });
       return;
     }
@@ -112,14 +117,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
     if (existingUser) {
       res.status(400).json({ message: 'Nome de usuário já cadastrado, altere seu nome de usuário e tente novamente!' });
-      return;
-    }
-
-    // 📌 Verifica se já existe um usuário com o mesmo email
-    const existingEmail = await User.findOne({ email });
-
-    if (existingEmail) {
-      res.status(400).json({ message: `O e-mail "${email}" já foi cadastrado por outro usuário! Volte para a tela de login e recupere seu usuário e senha.` });
       return;
     }
 
