@@ -128,6 +128,17 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // 📌 Verifica se o e-mail é válido
+    const isValidEmail = (email: string): boolean => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return email.length <= 50 && emailRegex.test(email);
+    };
+
+    if (!isValidEmail(email)) {
+      res.status(400).json({ message: 'E-mail inválido!' });
+      return;
+    }
+
     // 📌 Validação de nome de usuário
     const validateUserNameRules = userNameRules(userName);
 

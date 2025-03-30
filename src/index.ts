@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
+import studentRoutes from './routes/studentRoutes';
+import instructorRoutes from './routes/instructorRoutes';
 
 
 dotenv.config();
@@ -18,7 +20,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
 app.use('/api/users', userRoutes); // Rota de usuários
+app.use('/api/students', studentRoutes); // Rota de alunos
+app.use('/api/instructors', instructorRoutes); // Rota de instrutores
 
 const PORT = process.env.PORT || 5000;
 
