@@ -5,6 +5,7 @@ import connectDB from './config/db';
 import userRoutes from './routes/userRoutes';
 import studentRoutes from './routes/studentRoutes';
 import instructorRoutes from './routes/instructorRoutes';
+import classRoutes from './routes/classRoutes';
 
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes); // Rota de usuários
 app.use('/api/students', studentRoutes); // Rota de alunos
 app.use('/api/instructors', instructorRoutes); // Rota de instrutores
+app.use('/api/classes', classRoutes); // Rota de instrutores
 
 const PORT = process.env.PORT || 5000;
 

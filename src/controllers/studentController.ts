@@ -41,7 +41,7 @@ export const createStudent = async (req: Request, res: Response): Promise<void> 
         }
 
         // 📌 Verifica se o telefone possui caracteres válidos
-        const validTel = /^[0-9]{15}$/.test(tel);
+        const validTel = /^[0-9]{11}$/.test(tel);
 
         if (!validTel) {
             res.status(400).json({ message: 'Erro: Telefone inválido!' });

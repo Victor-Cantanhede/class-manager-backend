@@ -3,7 +3,6 @@ import { Class } from '../models/Class';
 import { Student, IStudent } from '../models/Student';
 import { Instructor } from '../models/Instructor';
 import User from '../models/User';
-import mongoose from 'mongoose';
 import generateClassCode from '../functions/generateClassCode';
 
 
@@ -35,7 +34,7 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
         }
 
         // 📌 Verifica se modalidade é válida
-        if (modality === 'presencial' || 'semi-presencial' || 'ead') {
+        if (!['presencial', 'semi-presencial', 'ead'].includes(modality)) {
             res.status(400).json({ message: 'Modalidade inválida!' });
             return;
         }
@@ -45,7 +44,7 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
             students.map(async (student: IStudent): Promise<boolean> => {
 
                 const existingStudent = await Student.findOne({ 
-                    registration: student.registration,
+                    _id: student._id,
                     linkedTo: userId
                 });
                 return !!existingStudent;
@@ -59,9 +58,9 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
         }
 
         // 📌 Verifica se o instrutor foi informado e se é vinculado ao usuário no banco
-        if (instructor) {
+        if (instructor && instructor._id) {
             const existingInstructor = await Instructor.findOne({
-                registration: instructor.registration,
+                _id: instructor._id,
                 linkedTo: userId
             });
 
@@ -76,15 +75,15 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
             code: generateClassCode(),
             course,
             modality,
-            students,
+            students: students.map((student: IStudent) => student._id),
             startDate,
             endDate,
-            instructor,
+            instructor: instructor._id,
             linkedTo: userId // Vinculando turma ao usuário
         });
 
         await newClass.save(); // Salva no banco
-        res.status(201).json({ message: 'Turma cadastrada com sucesso!', student: newClass });
+        res.status(201).json({ message: 'Turma cadastrada com sucesso!', newClass: newClass });
 
     } catch (error) {
         res.status(400).json({ message: `Erro ao cadastrar turma: ${(error as Error).message}`, error: (error as Error).message });
@@ -126,3 +125,105 @@ export const getClasses = async (req: Request, res: Response): Promise<void> => 
 }
 
 // Buscar turma por ID
+export const getClassById = async (req: Request, res: Response): Promise<void> => {
+    return; // TESTE
+    try {
+        const classe = await Class.findById(req.params.id);
+
+        if (!classe) {
+            res.status(404).json({ message: 'Turma não encontrada!' });
+            return;
+        }
+
+        res.status(200).json(classe);
+
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao buscar turma!', error });
+    }
+}
+
+// Atualizar turma
+export const updateClass = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { userId } = req.body;
+        const { id } = req.params;
+
+        // 📌 Validação: userId foi informado?
+        if (!userId) {
+            res.status(400).json({ message: 'O ID do usuário é obrigatório!' });
+            return;
+        }
+
+        // 📌 Verifica se o usuário existe no banco de dados
+        const existingUser = await User.findById(userId);
+
+        if (!existingUser) {
+            res.status(404).json({ message: 'Usuário não encontrado!' });
+            return;
+        }
+
+        // 📌 Verifica se a turma existe e está vinculado ao userId
+        const classe = await Class.findOne({ _id: id, linkedTo: userId });
+
+        if (!classe) {
+            res.status(403).json({ message: 'Acesso negado! Você só pode atualizar turmas vinculadas a você.' });
+            return;
+        }
+
+        // 📌 Atualiza a turma
+        const updatedClass = await Class.findByIdAndUpdate(id, req.body, { new: true });
+
+        if (!updatedClass) {
+            res.status(404).json({ message: 'Turma não encontrada!' });
+            return;
+        }
+
+        res.status(200).json({ message: 'Turma atualizada com sucesso!', updatedClass });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao atualizar turma!', error });
+    }
+}
+
+// Deletar uma turma
+export const deleteClass = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { userId } = req.body;
+        const { id } = req.params;
+
+        // 📌 Validação: userId foi informado?
+        if (!userId) {
+            res.status(400).json({ message: 'O ID do usuário é obrigatório!' });
+            return;
+        }
+
+        // 📌 Verifica se o usuário existe no banco de dados
+        const existingUser = await User.findById(userId);
+
+        if (!existingUser) {
+            res.status(404).json({ message: 'Usuário não encontrado!' });
+            return;
+        }
+
+        // 📌 Verifica se a turma existe e está vinculado ao userId
+        const classe = await Class.findOne({ _id: id, linkedTo: userId });
+
+        if (!classe) {
+            res.status(403).json({ message: 'Acesso negado! Você só pode excluir turmas vinculadas a você.' });
+            return;
+        }
+
+        // 📌 Deletando turma
+        const deletedClass = await Class.findByIdAndDelete(id);
+
+        if (!deletedClass) {
+            res.status(404).json({ message: 'Turma não encontrada!' });
+            return;
+        }
+
+        res.status(200).json({ message: 'Turma excluída com sucesso!' });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao excluir turma!', error });
+    }
+}

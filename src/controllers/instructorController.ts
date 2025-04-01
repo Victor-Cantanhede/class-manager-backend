@@ -41,7 +41,7 @@ export const createInstructor = async (req: Request, res: Response): Promise<voi
         }
 
         // 📌 Verifica se o telefone possui caracteres válidos
-        const validTel = /^[0-9]{15}$/.test(tel);
+        const validTel = /^[0-9]{11}$/.test(tel);
 
         if (!validTel) {
             res.status(400).json({ message: 'Erro: Telefone inválido!' });
@@ -87,7 +87,7 @@ export const createInstructor = async (req: Request, res: Response): Promise<voi
         });
 
         await newInstructor.save(); // Salva no banco
-        res.status(201).json({ message: 'Instrutor cadastrado com sucesso!', student: newInstructor });
+        res.status(201).json({ message: 'Instrutor cadastrado com sucesso!', newInstructor: newInstructor });
 
     } catch (error) {
         res.status(400).json({ message: `Erro ao cadastrar instrutor: ${(error as Error).message}`, error: (error as Error).message });
