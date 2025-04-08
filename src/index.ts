@@ -25,7 +25,7 @@ app.use(express.json());
 app.use('/api/users', userRoutes); // Rota de usuários
 app.use('/api/students', studentRoutes); // Rota de alunos
 app.use('/api/instructors', instructorRoutes); // Rota de instrutores
-app.use('/api/classes', classRoutes); // Rota de instrutores
+app.use('/api/classes', classRoutes); // Rota de turmas
 
 const PORT = process.env.PORT || 5000;
 
